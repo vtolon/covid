@@ -1,0 +1,99 @@
+---
+title: "Bulletin Covid19"
+author: "V. Tolon & V. Payet"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  pdf_document:
+    toc: true
+    toc_depth: '3'
+    number_sections: true
+  html_document:
+    code_folding: hide
+    fig_caption: true
+    number_sections: true
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+bibliography: biblio/biblio2.bib
+csl: "biblio/isara-iso-690.csl"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+jj<-30
+```
+
+
+# Présentation de Rmarkdown
+
+## Texte et bibliographie
+
+Bienvenu sous RMarkdown. Vous pouvez ici rédiger du texte avec des polices en *italique*, en **gras**, ou ***les deux***. Vous pouvez inserer des citations comme ceci [@wynes2017climate], comme cela [blabla, ex : @stern2017limiting; et blabla, ex : @lacroix2018comparing] ou encore comme ceci @gerlagh2018family. Veillez à bien gérer votre bibliographie en .bib et vos appels à citation. Vous pouvez utiliser des liens dans le texte comme ceci <https://isaranet.fr/> ou encore utiliser un lien hypertexte comme [**cela**](https://isaranet.fr/). Vous pouvez faire des listes à tiroir (en sautant bien une ligne avant de commencer) :
+
+-   Liste 1
+    -   Sous-liste 1.1
+    -   Sous-liste 1.2
+        -   Ainsi de suite
+-   Liste 2
+
+Le sommaire sera géré automatiquement grace au bon usage des \# avant le titre de la partie (ou \## ou \### suivant le niveau du titre).
+
+
+
+
+## Le code sous R avec les chunks
+
+RMarkdown permet également d'intégrer directement des codes et sorties de R dans le rapport. Pour cela vous devez ouvrir un *chunk* avec une ligne comme ```` ```{r imports, echo=TRUE,eval=TRUE} ```` puis le fermer avec ```` ``` ````. **Chaque *chunk*** doit avoir un nom différent !. Vous pouvez choisir d'afficher le code ou non avec `echo=` et choisir d'exécuter ce code avec `eval=` (en général `TRUE`).
+
+# Objectif et données
+
+Nous utilisons ici des données publiques (accès et utilisation libre) et de taille suffisamment restreintes pour être contenues dans un seul fichier de type *.txt* ou *.csv*. Vous pouvez trouver ces données avec un moteur de recherche classique ou sur des sites spécialisés dans la mise à disposition de données publiques. 
+
+-  Vous pourrez par exemple aller sur [https://www.data.gouv.fr/fr/](https://www.data.gouv.fr/fr/) puis faire une recherche avec *covid pays monde évolution*. Ouvrez le lien présentant l'évolution de la pandémie du Covid19 dans le monde sur les 30 derniers jours, allez en bas de la page pour cliquer sur le lien *Evolution par jour et par pays (CSV)*, copier l'adresse de l'URL et utilisez la dans l'import : 
+
+
+```{r covid,echo=T, eval=T,collapse=FALSE}
+covid<-read.csv2(
+  "https://www.data.gouv.fr/fr/datasets/r/f4935ed4-7a88-44e4-8f8a-33910a151d42" , 
+                 header=TRUE, dec=".", sep=";", 
+                 skip=7, encoding = "UTF-8")
+# Attention nous ne lisons pas les 7 première lignes grâce à skip=7
+# Il s'agissait de 7 lignes de présentation des données
+# Nous spécifions aussi l'encodage en UTF-8 (gestion des accents)
+dim(covid)
+covid[1:4, 1:5]
+covid$Date<-as.POSIXct(covid$Date,format="%Y-%m-%d")
+```
+
+# Pays :  France
+
+## Evolution du nombre de cas
+```{r covid2,echo=F, eval=T,collapse=F}
+covidF<-covid[covid$Pays=="France",]
+covidF<-covidF[order(covidF$Date),]
+Dates <- covidF$Date[-1]
+Jours <- 1:length(Dates)
+Cases <- diff(covidF$Infections)
+Cases[Cases<0] <- 0
+plot(Dates,Cases,type="b")
+glm1 <- glm(Cases~Jours,family=poisson) 
+lines(Dates,predict(glm1,type="response"),
+      pch=16,cex=0.5,col="blue",lwd=2)
+lines(Dates,predict(loess(Cases~Jours)),
+      pch=16,cex=0.5,col="red",lwd=2)
+nn<-nrow(covidF)
+```
+
+
+
+## Evolution sur `r jj` jours.
+```{r covid3,echo=F, eval=T,collapse=F}
+taux <- coef(glm1)[[2]]
+taux
+```
+
+Conclusion : .... 
+
+# Bibliographie
